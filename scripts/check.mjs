@@ -1,0 +1,15 @@
+import { chromium } from "playwright";
+const BASE = process.env.BASE || "http://localhost:3012";
+const b = await chromium.launch(); const p = await b.newPage();
+const errs=[]; p.on("pageerror",e=>errs.push(e.message));
+await p.goto(`${BASE}/`,{waitUntil:"domcontentloaded"});
+await p.waitForTimeout(1500);
+const cards = await p.locator("a[class*=card]").count();
+await p.screenshot({path:"scripts/landing2.png", fullPage:true});
+await p.goto(`${BASE}/demo/counties`,{waitUntil:"domcontentloaded"});
+await p.waitForTimeout(5000);
+const t = await p.locator("body").innerText();
+console.log("landing cards:", cards);
+console.log("counties gate:", /sign-in required|Sign in with ArcGIS/i.test(t));
+console.log("errors:", errs.length, errs.slice(0,4));
+await b.close();

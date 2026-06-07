@@ -127,8 +127,8 @@ export const DEMOS: Record<string, DemoConfig> = {
   // Master_ARC_Geography_2022 service, County polygons (layer 5). Real Red Cross
   // organizational data, not confidential. Login is still required by the app to
   // demonstrate the named-user OAuth flow.
-  biomed: {
-    key: "biomed",
+  counties: {
+    key: "counties",
     title: "Red Cross Counties — Population",
     tagline:
       "Red Cross county geography (3,162 counties), re-styled live in your browser after Red Cross sign-in.",
@@ -161,8 +161,8 @@ export const DEMOS: Record<string, DemoConfig> = {
   // ---- RED CROSS (login-gated): Chapter geography, same technique ---------
   // Same service, Chapter polygons (layer 3) — different geography + preset to
   // prove the re-styling generalizes across layers.
-  "biomed-rc": {
-    key: "biomed-rc",
+  chapters: {
+    key: "chapters",
     title: "Red Cross Chapters — Geography",
     tagline:
       "Red Cross chapter boundaries (226 chapters), re-styled with a different palette and filter.",
@@ -186,6 +186,45 @@ export const DEMOS: Record<string, DemoConfig> = {
     ],
     colorSchemes: [POLYGON_SCHEMES[1], POLYGON_SCHEMES[2], POLYGON_SCHEMES[0]],
     symbolStyles: POLYGON_SYMBOLS,
+    center: [-96, 38.5],
+    zoom: 4,
+  },
+
+  // ---- RED CROSS (login-gated): FLARE county fire activity ----------------
+  // Private item — loads for signed-in users with access. autodetect picks the
+  // numeric fire-count field + a category field after the layer loads.
+  flare: {
+    key: "flare",
+    title: "FLARE — County Fire Activity",
+    tagline:
+      "Red Cross FLARE county fire counts (2,914 counties), re-styled live after Red Cross sign-in.",
+    audience: "redcross",
+    requiresAuth: true,
+    source: { itemId: "6cfb67cba4bb4c769ff33824ac5e2fd1" },
+    autodetect: true,
+    expectedGeometry: "polygon",
+    categoryValues: "distinct",
+    colorSchemes: POLYGON_SCHEMES,
+    symbolStyles: POLYGON_SYMBOLS,
+    center: [-96, 38.5],
+    zoom: 4,
+  },
+
+  // ---- RED CROSS (login-gated): Damage Assessment points -----------------
+  // Private item — loads for signed-in users with access. Point markers.
+  da: {
+    key: "da",
+    title: "Damage Assessments — Standardized",
+    tagline:
+      "Red Cross standardized DA points (since 6/30/2023), re-styled live after Red Cross sign-in.",
+    audience: "redcross",
+    requiresAuth: true,
+    source: { itemId: "3d29e7f60ea7422d9954a370d084b2a4" },
+    autodetect: true,
+    expectedGeometry: "point",
+    categoryValues: "distinct",
+    colorSchemes: POINT_SCHEMES,
+    symbolStyles: POINT_SYMBOLS,
     center: [-96, 38.5],
     zoom: 4,
   },
