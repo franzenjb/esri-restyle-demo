@@ -152,13 +152,25 @@ export default function RestyleDemo({ config }: { config: DemoConfig }) {
             q.where = "1=1";
             q.outFields = [r.categoryField];
             q.returnDistinctValues = true;
+            q.returnGeometry = false; // REQUIRED — distinct is ignored otherwise
             q.orderByFields = [r.categoryField];
-            q.num = 1000;
+            q.num = 2000;
             const res = await rightLayer.queryFeatures(q);
-            r.categoryOptions = res.features
-              .map((f) => f.attributes[r.categoryField!])
-              .filter((v) => v !== null && v !== undefined && v !== "")
-              .map((v) => ({ value: String(v), label: String(v) }));
+            // Dedupe client-side too, in case the server ignores distinct.
+            const seen = new Set<string>();
+            const opts: { value: string; label: string }[] = [];
+            for (const f of res.features) {
+              const v = f.attributes[r.categoryField!];
+              if (v === null || v === undefined || v === "") continue;
+              const s = String(v);
+              if (seen.has(s)) continue;
+              seen.add(s);
+              opts.push({ value: s, label: s });
+            }
+            // A "category" with hundreds of distinct values isn't a useful
+            // filter dropdown — drop it rather than show a giant list.
+            r.categoryOptions = opts.length <= 60 ? opts : [];
+            if (opts.length > 60) r.categoryField = undefined;
           } catch {
             r.categoryOptions = [];
           }
@@ -412,20 +424,37 @@ function resolveConfig(config: DemoConfig, layer: FeatureLayer): Resolved {
   const fields = layer.fields ?? [];
   const usable = fields.filter((f) => !SYSTEM.test(f.name));
 
+  // Auto-pick a MEANINGFUL numeric field for the choropleth: skip id/code/year
+  // style fields, prefer count/total/score names.
+  const BAD_NUM = /(^|_)(id|fid|code|fips|geoid|zip|rcode|dcode|ecode|statefp|countyfp|countyns|affgeoid|year|lat|lon|long|x|y)($|_)/i;
+  const GOOD_NUM = /(total|count|sum|fires?|score|pop|population|cases|incidents|num|amount|value|percent|pct|rate|density)/i;
+  const numericCandidates = usable.filter(
+    (f) => isNumericType(f.type) && !BAD_NUM.test(f.name)
+  );
   const numericField =
     config.numericField ??
-    usable.find((f) => isNumericType(f.type))?.name;
+    numericCandidates.find((f) => GOOD_NUM.test(f.name))?.name ??
+    numericCandidates[0]?.name;
+
+  // Auto-pick a CATEGORY field good for a filter dropdown: prefer
+  // division/region/type/status/class names over a free-text name field.
+  const GOOD_CAT = /(division|region|type|category|status|class|group|state|sector)/i;
+  const stringFields = usable.filter((f) => f.type === "string");
   const categoryField =
     config.categoryField ??
-    usable.find((f) => f.type === "string")?.name;
+    stringFields.find((f) => GOOD_CAT.test(f.name))?.name ??
+    stringFields[0]?.name;
 
   let popupFields = config.popupFields;
   if (!popupFields) {
-    popupFields = usable.slice(0, 6).map((f) => ({
-      field: f.name,
-      label: f.alias || f.name,
-      format: isNumericType(f.type) ? ("number" as const) : ("text" as const),
-    }));
+    popupFields = usable
+      .filter((f) => !BAD_NUM.test(f.name))
+      .slice(0, 6)
+      .map((f) => ({
+        field: f.name,
+        label: f.alias || f.name,
+        format: isNumericType(f.type) ? ("number" as const) : ("text" as const),
+      }));
   }
 
   const titleField =
