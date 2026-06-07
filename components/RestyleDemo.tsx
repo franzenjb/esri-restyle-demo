@@ -109,12 +109,14 @@ export default function RestyleDemo({ config }: { config: DemoConfig }) {
         // Two independent layer instances from the SAME source item, so the
         // left keeps its authored renderer while the right is overridden.
         const mk = () =>
-          new FeatureLayer({
-            portalItem: { id: config.source.itemId },
-            ...(config.source.layerId !== undefined
-              ? { layerId: config.source.layerId }
-              : {}),
-          });
+          config.source.url
+            ? new FeatureLayer({ url: config.source.url })
+            : new FeatureLayer({
+                portalItem: { id: config.source.itemId! },
+                ...(config.source.layerId !== undefined
+                  ? { layerId: config.source.layerId }
+                  : {}),
+              });
 
         const leftLayer = mk();
         const rightLayer = mk();
@@ -264,12 +266,12 @@ export default function RestyleDemo({ config }: { config: DemoConfig }) {
     return (
       <div className={styles.gate}>
         <div className={styles.gateCard}>
-          <span className={styles.badge}>Red Cross · Internal</span>
-          <h2>This map is org-private</h2>
+          <span className={styles.badge}>Red Cross · Sign-in</span>
+          <h2>Red Cross sign-in required</h2>
           <p>
-            The {config.title} lives in the Red Cross ArcGIS Online organization.
-            It stays private. Sign in with your Red Cross account and the SDK
-            re-styles it in your browser — read-only, never modifying the source.
+            {config.title} is a Red Cross ArcGIS Online organizational layer. Sign
+            in with your Red Cross account and the SDK re-styles it in your
+            browser — read-only, never modifying the source.
           </p>
           <button className={styles.primary} onClick={doSignIn}>
             Sign in with ArcGIS

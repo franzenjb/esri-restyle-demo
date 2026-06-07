@@ -33,8 +33,9 @@ export type DemoConfig = {
   tagline: string;
   audience: "public" | "redcross";
   requiresAuth: boolean;
-  // Source: an AGOL portal item, optionally pinned to a sublayer index.
-  source: { itemId: string; layerId?: number };
+  // Source: an AGOL portal item (optionally pinned to a sublayer index), or a
+  // direct public service-layer URL.
+  source: { itemId?: string; layerId?: number; url?: string };
   // When true the engine inspects the loaded layer and fills in any missing
   // field config automatically (used for the private BioMed layers whose schema
   // we cannot read until after sign-in).
@@ -60,9 +61,9 @@ export type DemoConfig = {
 };
 
 const POLYGON_SCHEMES: ColorScheme[] = [
-  { id: "ember", label: "Ember", colors: ["#fde0c8", "#b3121f"] },
-  { id: "harbor", label: "Harbor", colors: ["#dceaf3", "#0b3d66"] },
-  { id: "moss", label: "Moss", colors: ["#e7ecd9", "#33581f"] },
+  { id: "ember", label: "Ember", colors: ["#f6b9a0", "#9e0f1b"] },
+  { id: "harbor", label: "Harbor", colors: ["#a7cae3", "#0b3d66"] },
+  { id: "moss", label: "Moss", colors: ["#b9c898", "#2c4a1a"] },
 ];
 
 const POLYGON_SYMBOLS: SymbolStyle[] = [
@@ -122,41 +123,69 @@ export const DEMOS: Record<string, DemoConfig> = {
     zoom: 4,
   },
 
-  // ---- RED CROSS (login-gated): BioMed blood-drive source layer -----------
+  // ---- RED CROSS (login-gated): County geography choropleth ---------------
+  // Master_ARC_Geography_2022 service, County polygons (layer 5). Real Red Cross
+  // organizational data, not confidential. Login is still required by the app to
+  // demonstrate the named-user OAuth flow.
   biomed: {
     key: "biomed",
-    title: "BioMed Blood-Drive Map",
+    title: "Red Cross Counties — Population",
     tagline:
-      "The org-private BioMed source feature layer, re-styled live in your browser after Red Cross sign-in.",
+      "Red Cross county geography (3,162 counties), re-styled live in your browser after Red Cross sign-in.",
     audience: "redcross",
     requiresAuth: true,
-    source: { itemId: "1cf18f94f20b4f65b651a0d329121d89" },
-    autodetect: true,
-    expectedGeometry: "point",
+    source: {
+      url: "https://services.arcgis.com/pGfbNJoYypmNq86F/arcgis/rest/services/Master_ARC_Geography_2022/FeatureServer/5",
+    },
+    autodetect: false,
+    expectedGeometry: "polygon",
+    numericField: "Pop_2023",
+    numericLabel: "2023 Population",
+    categoryField: "Division",
+    categoryLabel: "Division",
     categoryValues: "distinct",
-    colorSchemes: POINT_SCHEMES,
-    symbolStyles: POINT_SYMBOLS,
+    popupTitle: "{County}, {State}",
+    popupFields: [
+      { field: "County", label: "County", format: "text" },
+      { field: "Chapter", label: "Chapter", format: "text" },
+      { field: "Region", label: "Region", format: "text" },
+      { field: "Division", label: "Division", format: "text" },
+      { field: "Pop_2023", label: "Population (2023)", format: "number" },
+    ],
+    colorSchemes: POLYGON_SCHEMES,
+    symbolStyles: POLYGON_SYMBOLS,
     center: [-96, 38.5],
     zoom: 4,
   },
 
-  // ---- RED CROSS (login-gated): second example, same technique -----------
+  // ---- RED CROSS (login-gated): Chapter geography, same technique ---------
+  // Same service, Chapter polygons (layer 3) — different geography + preset to
+  // prove the re-styling generalizes across layers.
   "biomed-rc": {
     key: "biomed-rc",
-    title: "Red Cross Blood Program — Styling Variant",
+    title: "Red Cross Chapters — Geography",
     tagline:
-      "The same BioMed source, re-styled with a different Red Cross palette and filter — proof the technique generalizes.",
+      "Red Cross chapter boundaries (226 chapters), re-styled with a different palette and filter.",
     audience: "redcross",
     requiresAuth: true,
-    // NOTE: pending the dedicated RC-owned item id from Dragon, this reuses the
-    // BioMed source with a distinct default preset. Swap source.itemId when the
-    // RC-owned item id is available.
-    source: { itemId: "1cf18f94f20b4f65b651a0d329121d89" },
-    autodetect: true,
-    expectedGeometry: "point",
+    source: {
+      url: "https://services.arcgis.com/pGfbNJoYypmNq86F/arcgis/rest/services/Master_ARC_Geography_2022/FeatureServer/3",
+    },
+    autodetect: false,
+    expectedGeometry: "polygon",
+    categoryField: "Division",
+    categoryLabel: "Division",
     categoryValues: "distinct",
-    colorSchemes: [POINT_SCHEMES[1], POINT_SCHEMES[2], POINT_SCHEMES[0]],
-    symbolStyles: [POINT_SYMBOLS[1], POINT_SYMBOLS[2], POINT_SYMBOLS[0]],
+    popupTitle: "{Chapter}",
+    popupFields: [
+      { field: "Chapter", label: "Chapter", format: "text" },
+      { field: "Region", label: "Region", format: "text" },
+      { field: "Division", label: "Division", format: "text" },
+      { field: "City", label: "City", format: "text" },
+      { field: "State", label: "State", format: "text" },
+    ],
+    colorSchemes: [POLYGON_SCHEMES[1], POLYGON_SCHEMES[2], POLYGON_SCHEMES[0]],
+    symbolStyles: POLYGON_SYMBOLS,
     center: [-96, 38.5],
     zoom: 4,
   },
