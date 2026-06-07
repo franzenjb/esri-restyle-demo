@@ -1,0 +1,12 @@
+import { chromium } from "playwright";
+const b = await chromium.launch();
+const p = await b.newPage();
+const errs = [];
+p.on("pageerror", (e) => errs.push(e.message));
+await p.goto("http://localhost:3009/biomed", { waitUntil: "domcontentloaded" });
+await p.waitForTimeout(6000);
+const t = await p.locator("body").innerText();
+console.log("hasGate:", /org-private/i.test(t), "hasSignIn:", /Sign in with ArcGIS/i.test(t));
+console.log("errors:", errs.length, errs.slice(0, 5));
+await p.screenshot({ path: "scripts/biomed-gate.png" });
+await b.close();

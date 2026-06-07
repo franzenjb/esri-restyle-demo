@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Completing sign-in…</title>
+  </head>
+  <body>
+    <script>
+      // Relay the OAuth response back to the application window, then close.
+      // The ArcGIS IdentityManager listens for these CustomEvents on the opener.
+      (function () {
+        function dispatch(type, detail) {
+          if (window.opener) {
+            window.opener.dispatchEvent(
+              new CustomEvent(type, { detail: detail })
+            );
+          }
+        }
+        if (window.location.hash) {
+          dispatch("arcgis:auth:hash", window.location.hash);
+        } else if (window.location.search) {
+          dispatch("arcgis:auth:location:search", window.location.search);
+        }
+        window.close();
+      })();
+    </script>
+  </body>
+</html>
