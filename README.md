@@ -1,31 +1,32 @@
-# ESRI SDK Live Re-Styling Demo
+# ESRI SDK RAPT Restyle Case Study
 
-**Same data, your design, zero risk to the source.**
+**Ugly ArcGIS map → beautiful decision product.**
 
 A standalone Next.js app proving that the ArcGIS Maps SDK for JavaScript can
-completely transform how any existing AGOL map looks and behaves — new colors,
-icons, filters — **in the browser only, read-only, never written back**.
+load a public ArcGIS map/layer, then transform the presentation into an
+audience-ready decision product **in the browser only, read-only, never written
+back**.
 
 ## How it works
 
-Each demo loads the **same source item** the original uses, then builds two
-side-by-side `MapView`s with linked extents:
+The public `/rapt` route builds a rescue/redesign case study:
 
-- **Left** — the source rendered with its AGOL-authored default (no renderer set).
-- **Right** — the same source, with `FeatureLayer.renderer`, symbols,
-  `PopupTemplate`, `definitionExpression`, and `FeatureFilter` overridden in
-  memory.
+- **Before** — Jeff's public ArcGIS WebMap `SDK Restyle Test Map`
+  (`1b4169e0fe874b1686489111896e17a7`) loaded untouched as a `WebMap`.
+- **After** — the public FEMA RAPT county indicator layer
+  `All_Indicators_County_Boundaries/FeatureServer/23`, styled client-side with
+  `ClassBreaksRenderer`, `definitionExpression`, app-owned details, and
+  `GraphicsLayer` overlays using SVG `PictureMarkerSymbol` icons.
 
 Nothing is ever written back: no `applyEdits`, no `saveAs`, no item updates.
-Verify it — the source item's last-modified date never changes and the network
-tab shows no edit calls.
+The source WebMap and public FEMA layers stay exactly as authored.
 
 ## Routes
 
 | Route        | Source                                                 | Auth            |
 | ------------ | ------------------------------------------------------ | --------------- |
 | `/`          | Landing page explaining the concept                    | —               |
-| `/rapt`      | FEMA CRCI Counties `ff17676850114091b28cb4c502e9fb4e` (layer 54), public | **None**        |
+| `/rapt`      | Public WebMap `1b4169e0fe874b1686489111896e17a7` + FEMA RAPT county layer 23 | **None**        |
 | `/biomed`    | BioMed source `1cf18f94f20b4f65b651a0d329121d89`       | Red Cross OAuth |
 | `/biomed-rc` | Same source, different styling preset                  | Red Cross OAuth |
 
@@ -50,6 +51,7 @@ named-user OAuth.
 ```bash
 npm install
 npm run dev      # http://localhost:3000  (RAPT works; RC sign-in does not on localhost)
+npm test         # read-only SDK contract check
 npm run build    # production build
 ```
 
