@@ -7,11 +7,20 @@ load a public ArcGIS map/layer, then transform the presentation into an
 audience-ready decision product **in the browser only, read-only, never written
 back**.
 
+## Accuracy note
+
+This is **not** a real before/after of an official FEMA-authored RAPT WebMap.
+The BEFORE side is Jeff's deliberately staged `SDK Restyle Test Map`, used as a
+plain/default ArcGIS source view. The AFTER side uses real public FEMA RAPT
+county indicator services and restyles them client-side. The point is to prove
+the ArcGIS Maps SDK presentation pattern, not to claim FEMA shipped the ugly
+starting map.
+
 ## How it works
 
 The public `/rapt` route builds a rescue/redesign case study:
 
-- **Before** — Jeff's public ArcGIS WebMap `SDK Restyle Test Map`
+- **Before** — Jeff's staged ArcGIS WebMap `SDK Restyle Test Map`
   (`1b4169e0fe874b1686489111896e17a7`) loaded untouched as a `WebMap`.
 - **After** — the public FEMA RAPT county indicator layer
   `All_Indicators_County_Boundaries/FeatureServer/23`, styled client-side with
@@ -26,7 +35,7 @@ The source WebMap and public FEMA layers stay exactly as authored.
 | Route        | Source                                                 | Auth            |
 | ------------ | ------------------------------------------------------ | --------------- |
 | `/`          | Landing page explaining the concept                    | —               |
-| `/rapt`      | Public WebMap `1b4169e0fe874b1686489111896e17a7` + FEMA RAPT county layer 23 | **None**        |
+| `/rapt`      | Staged WebMap `1b4169e0fe874b1686489111896e17a7` + FEMA RAPT county layer 23 | **None**        |
 | `/biomed`    | BioMed source `1cf18f94f20b4f65b651a0d329121d89`       | Red Cross OAuth |
 | `/biomed-rc` | Same source, different styling preset                  | Red Cross OAuth |
 

@@ -518,7 +518,7 @@ export default function RaptCaseStudy() {
           ArcGIS SDK rescue case study
         </a>
         <div className={styles.proofMini}>
-          <span>Your public WebMap</span>
+          <span>Staged source view</span>
           <span>No source edits</span>
           <span>Browser-only SDK styling</span>
         </div>
@@ -528,14 +528,15 @@ export default function RaptCaseStudy() {
         <div>
           <h1>Ugly ArcGIS map → beautiful decision product</h1>
           <p>
-            Your public ArcGIS map loads untouched on the left. The right side
-            turns the public FEMA RAPT county indicators into a focused decision
-            surface without changing the WebMap or the source layers.
+            A staged ArcGIS before-view loads on the left. The right side turns
+            public FEMA RAPT county indicators into a focused decision surface
+            without changing the WebMap or the source layers. This is a restyle
+            proof, not an official FEMA before/after map.
           </p>
         </div>
         <div className={styles.sourceBox}>
-          <span>Before map</span>
-          <strong>SDK Restyle Test Map</strong>
+          <span>Before view</span>
+          <strong>SDK Restyle Test Map (staged)</strong>
           <code>WebMap {SOURCE_WEB_MAP_ID}</code>
         </div>
       </section>
@@ -588,7 +589,7 @@ export default function RaptCaseStudy() {
           <article className={styles.mapPanel}>
             <div className={styles.beforeCaption}>
               <strong>BEFORE</strong>
-              <span>your public WebMap, loaded untouched</span>
+              <span>staged default-style WebMap, loaded untouched</span>
             </div>
             <div ref={beforeEl} className={styles.map} />
             <div className={styles.rawToolbar} aria-hidden="true">
@@ -600,10 +601,10 @@ export default function RaptCaseStudy() {
               <span>NRI</span>
             </div>
             <div className={styles.rawLegend}>
-              <strong>Saved ArcGIS map</strong>
+              <strong>Staged ArcGIS map</strong>
               <span>
                 <i className={styles.rawDiamondLegend} />
-                Public WebMap item
+                Sample WebMap item
               </span>
               <span>
                 <i className={styles.rawStarLegend} />
@@ -702,7 +703,7 @@ export default function RaptCaseStudy() {
         <strong>PROOF: all changes happen in your browser</strong>
         {[
           "FeatureLayer from public service",
-          "Public WebMap loaded read-only",
+          "Staged WebMap loaded read-only",
           "Renderer override",
           "definitionExpression filter",
           "App-owned details panel",

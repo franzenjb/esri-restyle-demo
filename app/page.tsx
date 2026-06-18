@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 const points = [
   {
     h: "We load the same source",
-    p: "The app opens the exact AGOL item the original uses — same feature layer, same data, same server.",
+    p: "The app opens the same feature layer or staged source view, then changes only the browser-side presentation.",
   },
   {
     h: "We re-style it in memory",
@@ -43,10 +43,11 @@ export default function Home() {
           zero risk to the source.
         </h1>
         <p className={styles.lede}>
-          Any existing ArcGIS Online map can be completely transformed in the
-          browser — new colors, new icons, new filters — without touching,
-          editing, or endangering the original item. Every change below is a
-          client-side render override. The source is never modified.
+          ArcGIS Online content can be transformed in the browser — new colors,
+          new icons, new filters — without touching, editing, or endangering
+          the original item. The public RAPT demo uses a staged before-view plus
+          real public FEMA indicator layers to show the technique. Every change
+          below is a client-side render override.
         </p>
       </section>
 

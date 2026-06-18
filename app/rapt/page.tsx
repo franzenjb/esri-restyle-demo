@@ -4,7 +4,7 @@ import RaptCaseStudy from "@/components/RaptCaseStudyClient";
 export const metadata: Metadata = {
   title: "Ugly ArcGIS map -> beautiful decision product",
   description:
-    "A public FEMA RAPT case study showing an untouched ArcGIS WebMap transformed into a polished decision product in the browser with the ArcGIS Maps SDK for JavaScript.",
+    "A public ArcGIS Maps SDK case study using a staged before-view and public FEMA RAPT indicator layers to build a polished decision product in the browser.",
 };
 
 export default function Page() {

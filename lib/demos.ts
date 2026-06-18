@@ -98,7 +98,7 @@ export const DEMOS: Record<string, DemoConfig> = {
     key: "rapt",
     title: "Ugly ArcGIS map → beautiful decision product",
     tagline:
-      "Jeff's public RAPT WebMap becomes a polished FEMA county-indicator decision product, entirely in the browser.",
+      "A staged ArcGIS before-view and public FEMA RAPT county indicators become a polished decision product, entirely in the browser.",
     audience: "public",
     requiresAuth: false,
     source: {
