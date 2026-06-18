@@ -36,6 +36,7 @@ The source WebMap and public FEMA layers stay exactly as authored.
 | ------------ | ------------------------------------------------------ | --------------- |
 | `/`          | Landing page explaining the concept                    | —               |
 | `/rapt`      | Staged WebMap `1b4169e0fe874b1686489111896e17a7` + FEMA RAPT county layer 23 | **None**        |
+| `/sdk-lightning-talk.html` | Standalone "The Client Does the Work" SDK lightning talk with pink teddy-bear SVG `PictureMarkerSymbol` demo | **None** |
 | `/biomed`    | BioMed source `1cf18f94f20b4f65b651a0d329121d89`       | Red Cross OAuth |
 | `/biomed-rc` | Same source, different styling preset                  | Red Cross OAuth |
 

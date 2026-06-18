@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Client Does the Work — Client-Side Map Transformation</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+Pro:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css">
+<style>
+  :root {
+    --arc-red: #ED1B2E; --arc-black: #1a1a1a; --arc-cream: #f7f5f2;
+    --arc-gray-900: #2d2d2d; --arc-gray-700: #4a4a4a; --arc-gray-500: #737373;
+    --arc-gray-300: #a3a3a3; --arc-gray-100: #e5e5e5; --arc-white: #fff;
+    --arc-info: #1e4a6d; --arc-success: #2d5a27; --arc-caution: #b8860b; --arc-alert: #c41e3a;
+    --font-headline: 'Libre Baskerville', Georgia, serif;
+    --font-body: 'Source Sans Pro', 'Helvetica Neue', sans-serif;
+    --font-data: 'IBM Plex Mono', Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-body); background: var(--arc-cream); color: var(--arc-gray-900); line-height: 1.6; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--arc-cream); }
+  ::-webkit-scrollbar-thumb { background: var(--arc-gray-300); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--arc-gray-500); }
+
+  header.site { background: var(--arc-white); border-bottom: 3px solid var(--arc-black); padding: 48px 0 32px; }
+  .eyebrow { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .eyebrow span { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--arc-red); }
+  h1 { font-family: var(--font-headline); font-size: 42px; font-weight: 700; color: var(--arc-black); line-height: 1.15; margin-bottom: 12px; }
+  .subtitle { font-size: 19px; color: var(--arc-gray-500); font-weight: 300; max-width: 720px; }
+  .talk-meta { margin-top: 24px; font-family: var(--font-data); font-size: 12px; color: var(--arc-gray-500); letter-spacing: 0.5px; }
+
+  nav.site { background: var(--arc-white); border-bottom: 1px solid var(--arc-gray-100); position: sticky; top: 0; z-index: 50; }
+  nav.site .container { display: flex; gap: 4px; overflow-x: auto; }
+  nav.site a { font-size: 13px; font-weight: 600; color: var(--arc-gray-700); text-decoration: none; padding: 14px 12px; border-bottom: 3px solid transparent; white-space: nowrap; }
+  nav.site a:hover { color: var(--arc-black); border-bottom-color: var(--arc-gray-300); }
+  nav.site a .num { font-family: var(--font-data); font-size: 11px; color: var(--arc-red); margin-right: 6px; }
+
+  section { padding: 64px 0 16px; }
+  .section-num { font-family: var(--font-data); font-size: 14px; color: var(--arc-red); display: block; margin-bottom: 8px; }
+  h2 { font-family: var(--font-headline); font-size: 28px; font-weight: 700; color: var(--arc-black); margin-bottom: 8px; }
+  .red-rule { width: 40px; height: 3px; background: var(--arc-red); margin: 16px 0 24px; }
+  .lede { font-size: 17px; color: var(--arc-gray-700); max-width: 740px; margin-bottom: 24px; }
+  p { margin-bottom: 16px; max-width: 740px; }
+  strong { font-weight: 700; color: var(--arc-black); }
+
+  .pullquote { border-left: 3px solid var(--arc-red); padding: 8px 0 8px 24px; margin: 32px 0; }
+  .pullquote p { font-family: var(--font-headline); font-style: italic; font-size: 22px; line-height: 1.45; color: var(--arc-black); margin: 0; max-width: 680px; }
+  .pullquote .attr { font-family: var(--font-body); font-style: normal; font-size: 13px; color: var(--arc-gray-500); margin-top: 8px; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 24px 0 32px; }
+  .card { background: var(--arc-white); border: 1px solid var(--arc-gray-100); padding: 24px; }
+  .card.hl { border-left: 3px solid var(--arc-red); }
+  .card .tag { font-family: var(--font-data); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--arc-gray-500); display: block; margin-bottom: 8px; }
+  .card h3 { font-family: var(--font-headline); font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--arc-black); }
+  .card p { font-size: 14px; color: var(--arc-gray-700); margin: 0; }
+  .card code { font-family: var(--font-data); font-size: 13px; background: var(--arc-cream); padding: 1px 5px; }
+
+  .ba-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0 32px; }
+  .ba-panel { background: var(--arc-white); border: 1px solid var(--arc-gray-100); padding: 20px 24px; }
+  .ba-panel .label { font-family: var(--font-data); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 12px; }
+  .ba-panel.before .label { color: var(--arc-gray-500); }
+  .ba-panel.after .label { color: var(--arc-red); }
+  .ba-panel ul { list-style: none; }
+  .ba-panel li { font-size: 14px; color: var(--arc-gray-700); padding: 6px 0; border-bottom: 1px solid var(--arc-gray-100); }
+  .ba-panel li:last-child { border-bottom: none; }
+
+  /* ---------- LIVE DEMO ---------- */
+  .demo-banner { background: var(--arc-black); color: var(--arc-white); padding: 14px 20px; font-size: 14px; margin: 24px 0 0; }
+  .demo-banner strong { color: var(--arc-white); }
+  .demo-banner .mono { font-family: var(--font-data); font-size: 11px; color: var(--arc-gray-300); display: block; margin-top: 6px; letter-spacing: 0.3px; }
+  .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--arc-gray-100); border-top: none; background: var(--arc-white); }
+  .demo-pane { display: flex; flex-direction: column; min-width: 0; }
+  .demo-pane + .demo-pane { border-left: 1px solid var(--arc-gray-100); }
+  .pane-head { padding: 12px 16px; border-bottom: 1px solid var(--arc-gray-100); transition: background .3s, color .3s; }
+  .pane-head .label { font-family: var(--font-data); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; display: block; }
+  .pane-head .sub { font-size: 13px; margin-top: 2px; }
+  #paneHeadL .label { color: var(--arc-gray-500); }
+  #paneHeadR .label { color: var(--arc-red); }
+  .pane-head.theme-pink { background: #fce4ec; }
+  .pane-head.theme-pink .label { color: #ad1457; }
+  .pane-head.theme-pink .sub { color: #880e4f; font-weight: 600; }
+  .pane-head.theme-dark { background: #1a1a1a; }
+  .pane-head.theme-dark .label { color: #ED1B2E; }
+  .pane-head.theme-dark .sub { color: #e5e5e5; font-weight: 600; }
+  .map-box { height: 420px; width: 100%; position: relative; }
+  .map-box .esri-view { height: 100%; width: 100%; }
+  .demo-controls { background: var(--arc-white); border: 1px solid var(--arc-gray-100); border-top: none; padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+  .ctl-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ctl-group .ctl-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--arc-gray-500); margin-right: 4px; }
+  .pill { font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 6px 16px; border-radius: 20px; border: 1px solid var(--arc-gray-300); background: var(--arc-white); color: var(--arc-gray-700); cursor: pointer; }
+  .pill:hover { border-color: var(--arc-gray-500); }
+  .pill.active { background: var(--arc-black); color: var(--arc-white); border-color: var(--arc-black); }
+  .demo-note { font-size: 13px; color: var(--arc-gray-500); margin-top: 12px; max-width: 760px; }
+  .demo-note code { font-family: var(--font-data); font-size: 12px; background: var(--arc-white); border: 1px solid var(--arc-gray-100); padding: 1px 5px; }
+
+  .code-wrap { position: relative; margin: 24px 0 32px; }
+  .code-head { display: flex; justify-content: space-between; align-items: center; background: var(--arc-black); padding: 10px 16px; }
+  .code-head .fname { font-family: var(--font-data); font-size: 12px; color: var(--arc-gray-300); }
+  .copy-btn { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--arc-white); background: transparent; border: 1px solid var(--arc-gray-500); padding: 4px 12px; cursor: pointer; }
+  .copy-btn:hover { background: var(--arc-gray-900); }
+  pre { background: var(--arc-gray-900); color: #e8e6e1; font-family: var(--font-data); font-size: 13px; line-height: 1.65; padding: 20px 24px; overflow-x: auto; margin: 0; }
+  pre .c { color: #8a8a8a; }
+  pre .s { color: #c8d8b9; }
+  pre .hl-line { background: rgba(237,27,46,0.16); display: inline-block; width: 100%; }
+  code.inline { font-family: var(--font-data); font-size: 14px; background: var(--arc-white); border: 1px solid var(--arc-gray-100); padding: 1px 6px; }
+
+  .step { display: grid; grid-template-columns: 56px 1fr; gap: 16px; margin-bottom: 28px; max-width: 780px; }
+  .step .n { font-family: var(--font-data); font-size: 28px; color: var(--arc-red); line-height: 1.1; }
+  .step h3 { font-family: var(--font-headline); font-size: 19px; font-weight: 700; margin-bottom: 6px; }
+  .step p { font-size: 15px; color: var(--arc-gray-700); margin-bottom: 8px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 24px 0 32px; background: var(--arc-white); }
+  thead th { border-top: 2px solid var(--arc-black); border-bottom: 1px solid var(--arc-gray-100); text-align: left; padding: 12px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+  tbody td { border-bottom: 1px solid var(--arc-gray-100); padding: 12px 16px; font-size: 14px; vertical-align: top; }
+  tbody td:first-child { font-weight: 600; white-space: nowrap; }
+  td.yes { color: var(--arc-success); font-weight: 600; }
+  td.no { color: var(--arc-alert); font-weight: 600; }
+  td code { font-family: var(--font-data); font-size: 12px; }
+
+  .stats { display: flex; gap: 48px; flex-wrap: wrap; margin: 32px 0; padding: 24px 0; border-top: 2px solid var(--arc-black); border-bottom: 1px solid var(--arc-gray-100); }
+  .stat .v { font-family: var(--font-data); font-size: 32px; font-weight: 500; color: var(--arc-black); }
+  .stat.red .v { color: var(--arc-red); }
+  .stat .l { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--arc-gray-500); }
+
+  .callout { background: var(--arc-white); border: 1px solid var(--arc-gray-100); border-left: 3px solid var(--arc-info); padding: 20px 24px; margin: 24px 0 32px; max-width: 780px; }
+  .callout .tag { font-family: var(--font-data); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--arc-info); display: block; margin-bottom: 8px; }
+  .callout p { font-size: 14px; margin-bottom: 8px; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  footer.site { border-top: 3px solid var(--arc-black); padding: 32px 0; margin-top: 64px; background: var(--arc-white); }
+  footer.site p { font-size: 13px; color: var(--arc-gray-500); margin: 0; }
+
+  @media (max-width: 760px) {
+    h1 { font-size: 30px; }
+    .ba-wrap, .demo-grid { grid-template-columns: 1fr; }
+    .demo-pane + .demo-pane { border-left: none; border-top: 1px solid var(--arc-gray-100); }
+    .map-box { height: 320px; }
+    .stats { gap: 24px; }
+    .step { grid-template-columns: 40px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="container">
+    <div class="eyebrow">
+      <svg viewBox="0 0 32 32" width="32" height="32"><rect x="12" y="4" width="8" height="24" fill="#ED1B2E"/><rect x="4" y="12" width="24" height="8" fill="#ED1B2E"/></svg>
+      <span>GIS Community of Practice — Lightning Talk</span>
+    </div>
+    <h1>The Client Does the Work</h1>
+    <div class="subtitle">One feature layer. Unlimited presentations. Zero duplicates in ArcGIS Online. How the ArcGIS Maps SDK for JavaScript lets your browser re-style any map without touching the source.</div>
+    <div class="talk-meta">JEFF "DRAGON" FRANZEN &nbsp;&middot;&nbsp; AMERICAN RED CROSS GIS &nbsp;&middot;&nbsp; 5 MINUTES</div>
+  </div>
+</header>
+
+<nav class="site">
+  <div class="container">
+    <a href="#problem"><span class="num">01</span>The Problem</a>
+    <a href="#idea"><span class="num">02</span>The Idea</a>
+    <a href="#live"><span class="num">03</span>Live Proof</a>
+    <a href="#how"><span class="num">04</span>How It Works</a>
+    <a href="#code"><span class="num">05</span>The Entire Trick</a>
+    <a href="#safe"><span class="num">06</span>Why It's Safe</a>
+    <a href="#monday"><span class="num">07</span>Do It Monday</a>
+    <a href="#deploy"><span class="num">08</span>Where It Lives</a>
+  </div>
+</nav>
+
+<main class="container">
+
+  <!-- ============ 01 PROBLEM ============ -->
+  <section id="problem">
+    <span class="section-num">01</span>
+    <h2>The Problem: Layer Sprawl</h2>
+    <div class="red-rule"></div>
+    <p class="lede">A team wants the blood drive map in their region's colors. Another wants it filtered to their division. A third wants different popups for an executive briefing. What happens today?</p>
+    <p>Somebody copies the layer. Or saves a new web map. Or exports and re-publishes. Six months later there are five near-identical items in the org, four of them stale, and nobody is sure which one is real.</p>
+    <div class="stats">
+      <div class="stat"><div class="v">1</div><div class="l">Source dataset</div></div>
+      <div class="stat red"><div class="v">5+</div><div class="l">Duplicate copies</div></div>
+      <div class="stat"><div class="v">4</div><div class="l">Already stale</div></div>
+      <div class="stat"><div class="v">0</div><div class="l">Canonical answers</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 IDEA ============ -->
+  <section id="idea">
+    <span class="section-num">02</span>
+    <h2>The Idea: Separate the Data From the Paint</h2>
+    <div class="red-rule"></div>
+    <p class="lede">An ArcGIS Online item stores two things: the <strong>data</strong> and a <strong>suggestion</strong> for how to draw it &mdash; symbology, popups, filters.</p>
+    <div class="pullquote">
+      <p>"AGOL stores the data and a suggestion for how to draw it. The SDK lets your browser politely ignore the suggestion."</p>
+    </div>
+    <p>The ArcGIS Maps SDK for JavaScript loads the layer's data, then lets you override every presentation property <strong>in the browser's memory</strong>. The source item is never edited. Each app &mdash; each <em>audience</em> &mdash; gets its own look, all reading from one canonical layer.</p>
+    <div class="ba-wrap">
+      <div class="ba-panel before">
+        <span class="label">Today &mdash; Copy &amp; Diverge</span>
+        <ul>
+          <li>New requirement &rarr; new copy of the layer</li>
+          <li>Edits to the source don't reach the copies</li>
+          <li>Permissions managed five times</li>
+          <li>"Which one is current?" &mdash; nobody knows</li>
+        </ul>
+      </div>
+      <div class="ba-panel after">
+        <span class="label">This Pattern &mdash; One Layer, Many Looks</span>
+        <ul>
+          <li>New requirement &rarr; a few lines of app code</li>
+          <li>Source updates flow to every view instantly</li>
+          <li>Permissions managed once, at the source</li>
+          <li>One item ID. That's the canonical answer.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 LIVE PROOF ============ -->
+  <section id="live">
+    <span class="section-num">03</span>
+    <h2>Live Proof &mdash; A Federal Layer I Do Not Own</h2>
+    <div class="red-rule"></div>
+    <p class="lede">Below is the <strong>USGS National Structures &mdash; Hospitals &amp; Medical Centers</strong> layer, a live public federal dataset hosted in ArcGIS Online by <code class="inline">Esri_US_Federal_Data</code>. I have no edit rights to it. I cannot change it. And yet &mdash; press the buttons.</p>
+
+    <div class="demo-banner">
+      <strong>The map on the left is the live original. It is not modified.</strong> The map on the right is the same federal data re-rendered in your browser.
+      <span class="mono" id="demoMeta">SOURCE 2c36dbb008844081b017da6fd3d0d28b &middot; OWNER Esri_US_Federal_Data &middot; ACCESS public &middot; MY EDIT RIGHTS: none</span>
+    </div>
+
+    <div class="demo-grid">
+      <div class="demo-pane">
+        <div class="pane-head" id="paneHeadL">
+          <span class="label">Before &mdash; As Authored in AGOL</span>
+          <div class="sub" id="paneSubL">USGS default symbology, untouched</div>
+        </div>
+        <div class="map-box"><div id="viewLeft"></div></div>
+      </div>
+      <div class="demo-pane">
+        <div class="pane-head" id="paneHeadR">
+          <span class="label">After &mdash; Re-styled Live in Your Browser</span>
+          <div class="sub" id="paneSubR">Same source. Pick a personality.</div>
+        </div>
+        <div class="map-box"><div id="viewRight"></div></div>
+      </div>
+    </div>
+
+    <div class="demo-controls" style="border-bottom:1px solid var(--arc-gray-100);">
+      <div class="ctl-group">
+        <span class="ctl-label">Federal Layer</span>
+        <button class="pill active" data-layer="hospitals">Hospitals (points)</button>
+        <button class="pill" data-layer="ports">Ports (polygons)</button>
+        <button class="pill" data-layer="smoke">NWS Smoke (polygons)</button>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <div class="ctl-group" id="themeControls">
+        <span class="ctl-label">Theme</span>
+        <!-- theme buttons injected per layer -->
+      </div>
+    </div>
+    <p class="demo-note">Pan or zoom either map &mdash; the views are synchronized. Every restyle is an inline SVG <code>PictureMarkerSymbol</code> or a renderer/basemap swap done <strong>in browser memory only</strong>. Three different federal layers, three geometry types &mdash; none of them owned by me, none of them modified.</p>
+  </section>
+
+  <!-- ============ 04 HOW ============ -->
+  <section id="how">
+    <span class="section-num">04</span>
+    <h2>How It Works &mdash; Four Moves</h2>
+    <div class="red-rule"></div>
+
+    <div class="step">
+      <div class="n">1</div>
+      <div>
+        <h3>Load the same source item everyone uses</h3>
+        <p>The app creates a <code class="inline">FeatureLayer</code> pointed at the AGOL item ID. The SDK fetches the data plus the author's saved renderer and popups. This is a <strong>read</strong> &mdash; the "before" map is the genuine, untouched original.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="n">2</div>
+      <div>
+        <h3>Override the presentation in memory</h3>
+        <p>Reassign client-side properties on the JavaScript object: <code class="inline">renderer</code> for symbology, <code class="inline">popupTemplate</code> for popups, <code class="inline">definitionExpression</code> for SQL-style filters, <code class="inline">featureEffect</code> for interactive highlight and dim. Each assignment tells the rendering engine to redraw. Nothing more.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="n">3</div>
+      <div>
+        <h3>Never write back</h3>
+        <p>The operations that could modify the source &mdash; <code class="inline">applyEdits()</code>, <code class="inline">item.update()</code>, save-as &mdash; are simply never called. The app is architecturally incapable of damaging the original. Close the tab and every teddy bear evaporates.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="n">4</div>
+      <div>
+        <h3>Security rides along untouched</h3>
+        <p>Org-private content still demands a named-user login through Esri's own <code class="inline">IdentityManager</code> &mdash; for us, the standard SAML SSO redirect. Nothing is bypassed. The demo above uses a public layer, so it loads for anyone; swap in a private item ID and the login wall appears automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 CODE ============ -->
+  <section id="code">
+    <span class="section-num">05</span>
+    <h2>The Entire Trick Is Three Lines</h2>
+    <div class="red-rule"></div>
+    <p class="lede">Everything in the demo above &mdash; teddy bears included &mdash; reduces to property assignments. No framework. No build step. One HTML file: save it, double-click it, it runs.</p>
+
+    <div class="code-wrap">
+      <div class="code-head">
+        <span class="fname">restyle-starter.html</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+<pre id="starter-code">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css"&gt;
+  &lt;script src="https://js.arcgis.com/4.32/"&gt;&lt;/script&gt;
+  &lt;style&gt;html, body, #viewDiv { height: 100%; margin: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id="viewDiv"&gt;&lt;/div&gt;
+&lt;script&gt;
+require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer"],
+(Map, MapView, FeatureLayer) =&gt; {
+
+  <span class="c">// Step 1 — load any layer you can see in AGOL (read-only)</span>
+  <span class="c">// This is the live USGS hospitals layer from the demo:</span>
+  const layer = new FeatureLayer({
+    portalItem: { id: <span class="s">"2c36dbb008844081b017da6fd3d0d28b"</span> }
+  });
+
+  <span class="c">// Step 2 — THE ENTIRE TRICK: three in-memory overrides</span>
+<span class="hl-line">  layer.renderer = {                       <span class="c">// your symbology</span></span>
+<span class="hl-line">    type: "simple",</span>
+<span class="hl-line">    symbol: { type: "simple-marker", color: <span class="s">"#ED1B2E"</span>, size: 10,</span>
+<span class="hl-line">              outline: { color: "white", width: 1 } }</span>
+<span class="hl-line">  };</span>
+<span class="hl-line">  layer.definitionExpression = <span class="s">"STATE = 'ME'"</span>;   <span class="c">// your filter</span></span>
+<span class="hl-line">  layer.popupTemplate = { title: <span class="s">"{NAME}"</span>,        <span class="c">// your popup</span></span>
+<span class="hl-line">    content: <span class="s">"{ADDRESS}, {CITY} — your popup, your way."</span> };</span>
+
+  <span class="c">// Step 3 — there is no step 3. Nothing is ever written back.</span>
+  new MapView({
+    container: "viewDiv",
+    map: new Map({ basemap: "gray-vector", layers: [layer] }),
+    center: [-70.2, 43.8], zoom: 7
+  });
+});
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+    </div>
+
+    <div class="callout">
+      <span class="tag">The AI Shortcut</span>
+      <p>Don't memorize renderer syntax. Ask Claude or ChatGPT: <em>"ArcGIS Maps SDK for JavaScript 4.x &mdash; replace this layer's markers with a custom SVG icon as a PictureMarkerSymbol."</em> Working code comes back &mdash; that is exactly how the teddy bear got its job. The template above plus an AI assistant is the whole learning curve.</p>
+    </div>
+  </section>
+
+  <!-- ============ 06 SAFE ============ -->
+  <section id="safe">
+    <span class="section-num">06</span>
+    <h2>Why Your Layer Owner Can Relax</h2>
+    <div class="red-rule"></div>
+    <p>The demo above just dressed a federal dataset in pink. Here is why USGS is not going to call anyone:</p>
+    <table>
+      <thead><tr><th>Concern</th><th>Answer</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Can it modify the item?</td>
+          <td class="no">No</td>
+          <td>All overrides are in-memory render properties. No <code>applyEdits</code>, no <code>item.update</code>, no save-as anywhere in the code.</td>
+        </tr>
+        <tr>
+          <td>Does it bypass login?</td>
+          <td class="no">No</td>
+          <td>Org-private layers still require named-user OAuth through Esri's IdentityManager (our SAML SSO). Public layers load openly, as designed.</td>
+        </tr>
+        <tr>
+          <td>Is it supported Esri tech?</td>
+          <td class="yes">Yes</td>
+          <td>This is the documented, intended use of the ArcGIS Maps SDK for JavaScript &mdash; the same SDK that powers Esri's own apps.</td>
+        </tr>
+        <tr>
+          <td>Do source updates flow through?</td>
+          <td class="yes">Yes</td>
+          <td>The app reads the live service. When USGS updates a hospital, every styled view reflects it on next load.</td>
+        </tr>
+        <tr>
+          <td>What persists when the tab closes?</td>
+          <td class="yes">Nothing</td>
+          <td>The overrides live in browser memory only. The AGOL item remains byte-for-byte what its owner authored. The teddy bears go home.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 07 MONDAY ============ -->
+  <section id="monday">
+    <span class="section-num">07</span>
+    <h2>How You Do This Monday Morning</h2>
+    <div class="red-rule"></div>
+    <div class="card-grid">
+      <div class="card hl">
+        <span class="tag">Tier 1 &mdash; Ten Minutes</span>
+        <h3>Copy the template</h3>
+        <p>Take the starter file above. Change one item ID to a layer you own or can view. Double-click the file. You have a re-styled map.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Tier 2 &mdash; With an AI Assistant</span>
+        <h3>Describe what you want</h3>
+        <p>Paste the template into Claude or ChatGPT and say what to change: class breaks, custom SVG icons, a region filter, an Arcade popup. Iterate in plain English.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Tier 3 &mdash; Esri's On-Ramp</span>
+        <h3>Official tutorials</h3>
+        <p>developers.arcgis.com &rarr; "Display a map" and "Style a feature layer." CDN-based, no install, genuinely good. The deep end when you want it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 08 DEPLOY ============ -->
+  <section id="deploy">
+    <span class="section-num">08</span>
+    <h2>Where the File Lives</h2>
+    <div class="red-rule"></div>
+    <p class="lede">"Where do I put it?" &mdash; one file, four homes. Write once, frame anywhere.</p>
+    <table>
+      <thead><tr><th>Home</th><th>Effort</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Your desktop</td>
+          <td>None</td>
+          <td>Double-click the .html file. Works immediately for public layers; private layers prompt the normal AGOL login.</td>
+        </tr>
+        <tr>
+          <td>GitHub Pages / Vercel</td>
+          <td>5 minutes</td>
+          <td>Free static hosting with a shareable HTTPS URL. This page you're reading &mdash; live maps and all &mdash; is exactly that.</td>
+        </tr>
+        <tr>
+          <td>Experience Builder</td>
+          <td>2 minutes</td>
+          <td>Embed widget &rarr; <strong>Embed by URL</strong> &rarr; paste your hosted URL. (Skip "embed by code" &mdash; character limits and script restrictions break the SDK.) Requires HTTPS and a host that allows framing; Vercel and GitHub Pages both do by default.</td>
+        </tr>
+        <tr>
+          <td>StoryMaps / SharePoint</td>
+          <td>2 minutes</td>
+          <td>Same trick: the embed block frames your hosted URL. The single file serves every channel.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pullquote">
+      <p>"One canonical layer in AGOL. Every look, every filter, every audience &mdash; handled by a few lines of code that can't break anything."</p>
+      <div class="attr">The takeaway slide</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="container">
+    <p>Jeff "Dragon" Franzen &middot; American Red Cross GIS &middot; Independent demonstration &mdash; not an official American Red Cross application. Hospital data: USGS National Structures via Esri Federal Data (public). Built with the ArcGIS Maps SDK for JavaScript.</p>
+  </div>
+</footer>
+
+<script src="https://js.arcgis.com/4.32/"></script>
+<script>
+function copyCode(btn) {
+  const pre = document.getElementById('starter-code');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    const old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = old; }, 1600);
+  });
+}
+
+require([
+  "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/core/reactiveUtils"
+], (Map, MapView, FeatureLayer, reactiveUtils) => {
+
+  // ---------- Inline SVG icons ----------
+  const teddySVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <circle cx="17" cy="15" r="9" fill="#f48fb1" stroke="#ad1457" stroke-width="1.5"/>
+  <circle cx="47" cy="15" r="9" fill="#f48fb1" stroke="#ad1457" stroke-width="1.5"/>
+  <circle cx="17" cy="15" r="4.5" fill="#fce4ec"/>
+  <circle cx="47" cy="15" r="4.5" fill="#fce4ec"/>
+  <circle cx="32" cy="26" r="16" fill="#f48fb1" stroke="#ad1457" stroke-width="1.5"/>
+  <ellipse cx="32" cy="31" rx="9" ry="7" fill="#fce4ec"/>
+  <circle cx="26" cy="22.5" r="2.2" fill="#4a2c2a"/>
+  <circle cx="38" cy="22.5" r="2.2" fill="#4a2c2a"/>
+  <circle cx="32" cy="29" r="2.6" fill="#4a2c2a"/>
+  <path d="M32 31.5 q-3 4 -6 1.5 M32 31.5 q3 4 6 1.5" stroke="#4a2c2a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="32" cy="50" rx="14" ry="12" fill="#f48fb1" stroke="#ad1457" stroke-width="1.5"/>
+  <ellipse cx="32" cy="51" rx="8" ry="7.5" fill="#fce4ec"/>
+  <path d="M26 39 l6 3 6-3 -2.5 4.5 2.5 4 -6-2.5 -6 2.5 2.5-4z" fill="#ec407a" stroke="#ad1457" stroke-width="1"/>
+</svg>`;
+
+  const ambulanceSVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 42">
+  <rect x="10" y="4" width="12" height="5" rx="1" fill="#ED1B2E"/>
+  <rect x="2" y="9" width="42" height="23" rx="2" fill="#f5f5f5" stroke="#1a1a1a" stroke-width="2"/>
+  <path d="M44 14 h10 l7 8 v10 h-17 z" fill="#f5f5f5" stroke="#1a1a1a" stroke-width="2"/>
+  <path d="M46.5 16.5 h6 l4.5 5.5 h-10.5 z" fill="#90a4ae" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="2" y="26" width="59" height="4" fill="#ED1B2E"/>
+  <rect x="19" y="12" width="5" height="13" fill="#ED1B2E"/>
+  <rect x="15" y="16" width="13" height="5" fill="#ED1B2E"/>
+  <circle cx="15" cy="34" r="6" fill="#1a1a1a"/><circle cx="15" cy="34" r="2.5" fill="#737373"/>
+  <circle cx="50" cy="34" r="6" fill="#1a1a1a"/><circle cx="50" cy="34" r="2.5" fill="#737373"/>
+</svg>`;
+
+  const svgURI = (s) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s.trim());
+
+  // ---------- Two synchronized views, layers swapped in/out ----------
+  const mapLeft  = new Map({ basemap: "gray-vector" });
+  const mapRight = new Map({ basemap: "gray-vector" });
+
+  const viewLeft = new MapView({
+    container: "viewLeft", map: mapLeft, center: [-95, 39], zoom: 4,
+    constraints: { snapToZoom: false },
+    popup: { dockEnabled: false, defaultPopupTemplateEnabled: true }
+  });
+  const viewRight = new MapView({
+    container: "viewRight", map: mapRight, center: [-95, 39], zoom: 4,
+    constraints: { snapToZoom: false }
+  });
+
+  let activeView = null;
+  [viewLeft, viewRight].forEach((v) => {
+    v.on("pointer-down", () => { activeView = v; });
+    v.on("mouse-wheel",  () => { activeView = v; });
+    v.on("drag",         () => { activeView = v; });
+  });
+  reactiveUtils.watch(() => viewLeft.viewpoint, (vp) => {
+    if (activeView === viewLeft && vp) viewRight.viewpoint = vp.clone();
+  });
+  reactiveUtils.watch(() => viewRight.viewpoint, (vp) => {
+    if (activeView === viewRight && vp) viewLeft.viewpoint = vp.clone();
+  });
+
+  // ---------- LAYER DEFINITIONS ----------
+  const LAYERS = {
+    hospitals: {
+      itemId: "2c36dbb008844081b017da6fd3d0d28b",
+      owner: "Esri_US_Federal_Data",
+      home: { center: [-69.4, 45.2], zoom: 6 },
+      defaultWhere: "STATE = 'ME'",
+      themes: {
+        original: { label: "As Authored", basemap: "gray-vector", apply(L){ restoreOriginal(L); } },
+        pink: { label: "Teddy Bear Pink", basemap: "gray-vector", apply(L){
+          L.renderer = { type:"simple", symbol:{ type:"picture-marker", url:svgURI(teddySVG), width:"30px", height:"30px" } };
+          L.popupTemplate = { title:"{NAME}", content:"A very cuddly hospital in {CITY}, {STATE}." };
+        }},
+        dark: { label: "Ambulance Dark", basemap: "dark-gray-vector", apply(L){
+          L.renderer = { type:"simple", symbol:{ type:"picture-marker", url:svgURI(ambulanceSVG), width:"34px", height:"22px" } };
+          L.popupTemplate = { title:"{NAME}", content:"<span style='font-family:monospace'>{ADDRESS}<br>{CITY}, {STATE} {ZIPCODE}</span>" };
+        }}
+      }
+    },
+    ports: {
+      itemId: "3253bcaf83dc4daea2d1b48fb87deaea",
+      owner: "Esri_US_Federal_Data",
+      home: { center: [-95, 39], zoom: 4 },
+      defaultWhere: null,
+      themes: {
+        original: { label: "As Authored", basemap: "gray-vector", apply(L){ restoreOriginal(L); } },
+        tonnage: { label: "Tonnage Heat", basemap: "gray-vector", apply(L){
+          L.renderer = {
+            type: "class-breaks", field: "TOTAL",
+            classBreakInfos: [
+              { minValue: 0, maxValue: 10000000, symbol: fill("#fee5d9"), label: "< 10M tons" },
+              { minValue: 10000000, maxValue: 30000000, symbol: fill("#fcae91"), label: "10–30M" },
+              { minValue: 30000000, maxValue: 70000000, symbol: fill("#fb6a4a"), label: "30–70M" },
+              { minValue: 70000000, maxValue: 999999999999, symbol: fill("#cb181d"), label: "> 70M tons" }
+            ]
+          };
+          L.popupTemplate = { title:"{PORTNAME}", content:"Rank {RANK} • Total {TOTAL} tons • Type: {TYPE}" };
+        }},
+        neon: { label: "Neon Trade", basemap: "dark-gray-vector", apply(L){
+          L.renderer = {
+            type: "class-breaks", field: "TOTAL",
+            classBreakInfos: [
+              { minValue: 0, maxValue: 10000000, symbol: glow("#39ff14") },
+              { minValue: 10000000, maxValue: 30000000, symbol: glow("#00e5ff") },
+              { minValue: 30000000, maxValue: 70000000, symbol: glow("#ff00ff") },
+              { minValue: 70000000, maxValue: 999999999999, symbol: glow("#ffea00") }
+            ]
+          };
+          L.popupTemplate = { title:"{PORTNAME}", content:"<span style='font-family:monospace'>RANK {RANK} · {TOTAL} TONS</span>" };
+        }}
+      }
+    },
+    smoke: {
+      itemId: "a98fd08751a5480c898b7cebe38807f4",
+      owner: "esri_livefeeds2",
+      home: { center: [-110, 42], zoom: 4 },
+      defaultWhere: null,
+      themes: {
+        original: { label: "As Authored", basemap: "gray-vector", apply(L){ restoreOriginal(L); } },
+        disco: { label: "Disco Inferno", basemap: "dark-gray-vector", apply(L){
+          L.renderer = {
+            type: "unique-value", field: "smoke_classdesc",
+            uniqueValueInfos: [
+              { value: "0 - 3",       symbol: fill2("#39ff14", 0.45) },
+              { value: "3 - 25",      symbol: fill2("#00e5ff", 0.55) },
+              { value: "25 - 63",     symbol: fill2("#ff00ff", 0.6) },
+              { value: "63 - 158",    symbol: fill2("#ff8c00", 0.7) },
+              { value: "158 - 1000",  symbol: fill2("#ff1493", 0.85) }
+            ]
+          };
+          L.popupTemplate = { title:"Smoke: {smoke_classdesc} µg/m³", content:"This is a real NWS wildfire-smoke forecast. It should not look like a rave. And yet." };
+        }},
+        ops: { label: "Tactical Ops", basemap: "satellite", apply(L){
+          L.renderer = {
+            type: "unique-value", field: "smoke_classdesc",
+            uniqueValueInfos: [
+              { value: "0 - 3",       symbol: outline("#00ff88") },
+              { value: "3 - 25",      symbol: outline("#ffd500") },
+              { value: "25 - 63",     symbol: outline("#ff9500") },
+              { value: "63 - 158",    symbol: outline("#ff3b30") },
+              { value: "158 - 1000",  symbol: outline("#ff0033") }
+            ]
+          };
+          L.popupTemplate = { title:"SMOKE {smoke_classdesc}", content:"<span style='font-family:monospace'>NWS NDGD FORECAST</span>" };
+        }}
+      }
+    }
+  };
+
+  // symbol helpers
+  function fill(color){ return { type:"simple-fill", color:color, outline:{ color:"#ffffff", width:0.4 } }; }
+  function fill2(color, op){
+    const c = hexToRgb(color); return { type:"simple-fill", color:[c[0],c[1],c[2],op], outline:{ color:[255,255,255,0.5], width:0.5 } };
+  }
+  function glow(color){ const c=hexToRgb(color); return { type:"simple-fill", color:[c[0],c[1],c[2],0.55], outline:{ color:color, width:1.5 } }; }
+  function outline(color){ return { type:"simple-fill", color:[0,0,0,0], outline:{ color:color, width:1.6 } }; }
+  function hexToRgb(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+
+  // ---------- STATE ----------
+  let curLayerKey = null;
+  let layerLeft = null, layerRight = null;
+  let originalRenderer = null, originalPopup = null;
+
+  function restoreOriginal(L){
+    if (originalRenderer) L.renderer = originalRenderer.clone();
+    L.popupTemplate = originalPopup ? originalPopup.clone() : null;
+  }
+
+  function buildThemeButtons(layerKey){
+    const def = LAYERS[layerKey];
+    const wrap = document.getElementById("themeControls");
+    wrap.innerHTML = '<span class="ctl-label">Theme</span>';
+    Object.keys(def.themes).forEach((tk, i) => {
+      const b = document.createElement("button");
+      b.className = "pill" + (i===0 ? " active" : "");
+      b.textContent = def.themes[tk].label;
+      b.dataset.themeKey = tk;
+      b.addEventListener("click", () => {
+        wrap.querySelectorAll("[data-theme-key]").forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        const t = def.themes[tk];
+        t.apply(layerRight);
+        mapRight.basemap = t.basemap;
+      });
+      wrap.appendChild(b);
+    });
+  }
+
+  function loadLayer(layerKey){
+    if (layerKey === curLayerKey) return;
+    curLayerKey = layerKey;
+    const def = LAYERS[layerKey];
+
+    // clear old layers
+    mapLeft.removeAll(); mapRight.removeAll();
+    mapLeft.basemap = "gray-vector"; mapRight.basemap = "gray-vector";
+    originalRenderer = null; originalPopup = null;
+
+    layerLeft  = new FeatureLayer({ portalItem: { id: def.itemId } });
+    layerRight = new FeatureLayer({ portalItem: { id: def.itemId } });
+    if (def.defaultWhere) layerRight.definitionExpression = def.defaultWhere;
+
+    mapLeft.add(layerLeft);
+    mapRight.add(layerRight);
+
+    layerRight.when(() => {
+      originalRenderer = layerRight.renderer ? layerRight.renderer.clone() : null;
+      originalPopup = layerRight.popupTemplate ? layerRight.popupTemplate.clone() : null;
+    });
+
+    // meta banner
+    document.getElementById("demoMeta").textContent =
+      "SOURCE " + def.itemId + " \u00b7 OWNER " + def.owner + " \u00b7 ACCESS public \u00b7 MY EDIT RIGHTS: none";
+
+    buildThemeButtons(layerKey);
+    activeView = viewRight;
+    viewRight.goTo(def.home);
+    viewLeft.goTo(def.home);
+  }
+
+  // layer switcher buttons
+  document.querySelectorAll("[data-layer]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-layer]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      loadLayer(btn.dataset.layer);
+    });
+  });
+
+  // initial load
+  loadLayer("hospitals");
+});
+</script>
+
+</body>
+</html>
